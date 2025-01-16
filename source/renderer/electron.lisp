@@ -133,6 +133,15 @@ Note that by changing the default value, modifier keys can be remapped."))
                          (lambda (buffer event)
                            (on-signal-key-press-event buffer event)))
   (when (web-buffer-p buffer)
+    (electron:add-listener (electron:web-contents buffer) :did-start-loading
+                           (lambda (_) (declare (ignore _))
+                             (setf (nyxt::status buffer) :loading)
+                             (on-signal-load-started buffer (ffi-buffer-url buffer))))
+    (electron:add-listener (electron:web-contents buffer) :did-redirect-navigation
+                           (lambda (_) (declare (ignore _))
+                             (let ((url (ffi-buffer-url buffer)))
+                               (setf (url buffer) url)
+                               (on-signal-load-redirected buffer url))))
     (electron:add-listener (electron:web-contents buffer) :did-finish-load
                            (lambda (_) (declare (ignore _))
                              (setf (nyxt::status buffer) :finished)
